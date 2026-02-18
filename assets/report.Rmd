@@ -1,0 +1,59 @@
+---
+title: "phageflow report"
+output: html_document
+params:
+  sample: ""
+  fastp_html: ""
+  fastp_json: ""
+  quast_tsv: ""
+  quast_report: ""
+  mash_dist: ""
+  mash_closest: ""
+  pharokka_summary: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(jsonlite)
+```
+
+## Sample
+
+`r params$sample`
+
+## fastp summary
+
+```{r fastp}
+fastp_data <- fromJSON(params$fastp_json)
+before <- fastp_data$summary$before_filtering
+after <- fastp_data$summary$after_filtering
+data.frame(
+  metric = c("reads_before", "reads_after", "q30_rate_before", "q30_rate_after"),
+  value = c(before$total_reads, after$total_reads, before$q30_rate, after$q30_rate)
+)
+```
+
+Fastp interactive report: `r params$fastp_html`
+
+## QUAST metrics
+
+```{r quast}
+if (file.exists(params$quast_tsv)) {
+  quast_df <- read.delim(params$quast_tsv, sep = "\t", header = TRUE)
+  quast_df
+}
+```
+
+## Mash closest references
+
+```{r mash}
+closest_df <- read.delim(params$mash_closest, sep = "\t", header = TRUE)
+closest_df
+```
+
+## Pharokka summary
+
+```{r pharokka}
+pharokka_df <- read.delim(params$pharokka_summary, sep = "\t", header = TRUE)
+pharokka_df
+```
