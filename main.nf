@@ -28,7 +28,8 @@ process REPORT {
     ${mash_dist} \
     ${mash_closest} \
     ${pharokka_summary} \
-    ${sample}.report.html
+    ${sample}.report.html \
+    ${projectDir}/assets/report.Rmd
   """
 }
 

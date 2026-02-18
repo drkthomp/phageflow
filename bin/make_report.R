@@ -1,7 +1,7 @@
 args <- commandArgs(trailingOnly = TRUE)
 
-if (length(args) != 9) {
-  stop('Usage: make_report.R <sample> <fastp_html> <fastp_json> <quast_tsv> <quast_report> <mash_dist> <mash_closest> <pharokka_summary> <output_html>')
+if (length(args) != 10) {
+  stop('Usage: make_report.R <sample> <fastp_html> <fastp_json> <quast_tsv> <quast_report> <mash_dist> <mash_closest> <pharokka_summary> <output_html> <report_rmd>')
 }
 
 sample <- args[[1]]
@@ -13,9 +13,10 @@ mash_dist <- args[[6]]
 mash_closest <- args[[7]]
 pharokka_summary <- args[[8]]
 output_html <- args[[9]]
+report_rmd <- args[[10]]
 
 rmarkdown::render(
-  input = file.path(dirname(normalizePath(commandArgs(trailingOnly = FALSE)[grep('^--file=', commandArgs(trailingOnly = FALSE))])), '..', 'assets', 'report.Rmd'),
+  input = report_rmd,
   output_file = output_html,
   params = list(
     sample = sample,
