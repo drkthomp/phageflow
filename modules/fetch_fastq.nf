@@ -11,6 +11,7 @@ process FETCH_FASTQ {
   script:
   """
   set -euo pipefail
+  unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY || true
 
   if command -v curl >/dev/null 2>&1; then
     curl -L --retry 3 --retry-delay 5 -o ${sample}_1.fastq.gz ${fastq_1}
