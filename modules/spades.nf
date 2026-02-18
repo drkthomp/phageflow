@@ -16,7 +16,8 @@ process SPADES {
     -1 ${read1} \
     -2 ${read2} \
     -o spades_out \
-    -t ${task.cpus}
+    -t ${task.cpus} \
+    --phred-offset ${params.spades_phred_offset}
 
   cp spades_out/contigs.fasta ${sample}.contigs.fasta
   """

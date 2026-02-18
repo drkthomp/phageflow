@@ -135,4 +135,5 @@ Per-sample outputs are published under `results/<sample>/`.
 - Default sample is SRR24913468 from PRJNA983107.
 - `params.run_pharokka=true` by default; set to false for a lighter run.
 - Mash references are sourced from `assets/mash_refs/accessions.txt` with fallback to `assets/mash_refs/refs.fasta`.
+- SPAdes uses `--phred-offset 33` by default (`--spades_phred_offset` configurable).
 - Runtime Docker image definition is in `docker/nextflow-runtime.Dockerfile`.
