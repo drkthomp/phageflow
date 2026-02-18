@@ -77,7 +77,7 @@ nextflow run main.nf -profile local -with-trace -with-timeline -with-report
 
 ```csv
 sample,fastq_1,fastq_2
-SRR24913468,https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR249/008/SRR24913468/SRR24913468_1.fastq.gz,https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR249/008/SRR24913468/SRR24913468_2.fastq.gz
+SRR24913468,https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR249/068/SRR24913468/SRR24913468_1.fastq.gz,https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR249/068/SRR24913468/SRR24913468_2.fastq.gz
 ```
 
 ## Profiles
