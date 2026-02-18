@@ -1,5 +1,5 @@
 process FETCH_FASTQ {
-  tag sample
+  tag "${sample}"
   publishDir { "${params.outdir}/${sample}/raw" }, mode: 'copy'
 
   input:
@@ -20,5 +20,12 @@ process FETCH_FASTQ {
     wget -O ${sample}_1.fastq.gz ${fastq_1}
     wget -O ${sample}_2.fastq.gz ${fastq_2}
   fi
+  """
+
+  stub:
+  """
+  set -euo pipefail
+  printf '@stub\nN\n+\n#\n' | gzip -c > ${sample}_1.fastq.gz
+  cp ${sample}_1.fastq.gz ${sample}_2.fastq.gz
   """
 }

@@ -8,7 +8,7 @@ include { MASH_DIST } from './modules/mash'
 include { PHAROKKA } from './modules/pharokka'
 
 process REPORT {
-  tag sample
+  tag "${sample}"
   publishDir { "${params.outdir}/${sample}/report" }, mode: 'copy'
 
   input:
@@ -33,13 +33,26 @@ process REPORT {
     ${sample}.report.html \
     ${report_rmd}
   """
+
+  stub:
+  """
+  set -euo pipefail
+  printf '<html><body><h1>Report stub for ${sample}</h1></body></html>\n' > ${sample}.report.html
+  """
 }
 
 workflow {
   channel
     .fromPath(params.input)
     .splitCsv(header: true)
-    .map { row -> tuple(row.sample, row.fastq_1, row.fastq_2) }
+    .map { row ->
+      tuple(
+        row?.sample?.toString()?.trim(),
+        row?.fastq_1?.toString()?.trim(),
+        row?.fastq_2?.toString()?.trim()
+      )
+    }
+    .filter { sample, fastq1, fastq2 -> sample && fastq1 && fastq2 }
     .set { samples_ch }
 
   fetched = FETCH_FASTQ(samples_ch)

@@ -1,5 +1,5 @@
 process QUAST {
-  tag sample
+  tag "${sample}"
   publishDir { "${params.outdir}/${sample}/quast" }, mode: 'copy'
 
   input:
@@ -29,5 +29,12 @@ process QUAST {
     printf "total_length\tNA\n" >> ${sample}.quast.tsv
     printf "N50\tNA\n" >> ${sample}.quast.tsv
   fi
+  """
+
+  stub:
+  """
+  set -euo pipefail
+  printf "metric\tvalue\ncontigs\t1\ntotal_length\t56\nN50\t56\n" > ${sample}.quast.tsv
+  printf "QUAST stub report for ${sample}\n" > ${sample}.quast.report.txt
   """
 }

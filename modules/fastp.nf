@@ -1,5 +1,5 @@
 process FASTP {
-  tag sample
+  tag "${sample}"
   publishDir { "${params.outdir}/${sample}/fastp" }, mode: 'copy'
 
   input:
@@ -23,5 +23,14 @@ process FASTP {
     --json ${sample}.fastp.json \
     --thread ${task.cpus} \
     ${readsToProcess}
+  """
+
+  stub:
+  """
+  set -euo pipefail
+  printf '@stub\nN\n+\n#\n' | gzip -c > ${sample}.trimmed_1.fastq.gz
+  cp ${sample}.trimmed_1.fastq.gz ${sample}.trimmed_2.fastq.gz
+  printf '<html><body><h1>fastp stub</h1></body></html>\n' > ${sample}.fastp.html
+  printf '{"summary":{"before_filtering":{},"after_filtering":{}},"stub":true}\n' > ${sample}.fastp.json
   """
 }

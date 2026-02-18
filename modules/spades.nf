@@ -1,5 +1,5 @@
 process SPADES {
-  tag sample
+  tag "${sample}"
   publishDir { "${params.outdir}/${sample}/spades" }, mode: 'copy'
 
   input:
@@ -20,5 +20,11 @@ process SPADES {
     --phred-offset ${params.spades_phred_offset}
 
   cp spades_out/contigs.fasta ${sample}.contigs.fasta
+  """
+
+  stub:
+  """
+  set -euo pipefail
+  printf '>contig_1\nATGCGTACGTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAG\n' > ${sample}.contigs.fasta
   """
 }

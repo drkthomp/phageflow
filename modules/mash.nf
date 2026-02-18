@@ -1,5 +1,5 @@
 process MASH_DIST {
-  tag sample
+  tag "${sample}"
   publishDir { "${params.outdir}/${sample}/mash" }, mode: 'copy'
 
   input:
@@ -41,5 +41,13 @@ process MASH_DIST {
 
   printf "reference\tquery\tdistance\tp_value\tshared_hashes\n" > ${sample}.mash.closest.tsv
   head -n 1 ${sample}.mash.dist.raw.tsv >> ${sample}.mash.closest.tsv || true
+  """
+
+  stub:
+  """
+  set -euo pipefail
+  printf "reference\tquery\tdistance\tp_value\tshared_hashes\n" > ${sample}.mash.dist.tsv
+  printf "ref_stub\t${sample}.contigs.fasta\t0.0500\t1e-10\t100/1000\n" >> ${sample}.mash.dist.tsv
+  cp ${sample}.mash.dist.tsv ${sample}.mash.closest.tsv
   """
 }
