@@ -18,15 +18,11 @@ process PHAROKKA {
     -p ${sample} \
     -t ${task.cpus}
 
-  gff_file=$(find pharokka_out -maxdepth 1 -name "*.gff" | head -n 1)
-  faa_file=$(find pharokka_out -maxdepth 1 -name "*.faa" | head -n 1)
+  cp pharokka_out/*.gff ${sample}.pharokka.gff
+  cp pharokka_out/*.faa ${sample}.pharokka.cds.faa
 
-  cp "$gff_file" ${sample}.pharokka.gff
-  cp "$faa_file" ${sample}.pharokka.cds.faa
-
-  proteins=$(grep -c '^>' ${sample}.pharokka.cds.faa || true)
   printf "metric\tvalue\n" > ${sample}.pharokka.summary.tsv
-  printf "predicted_proteins\t%s\n" "$proteins" >> ${sample}.pharokka.summary.tsv
+  printf "predicted_proteins\tNA\n" >> ${sample}.pharokka.summary.tsv
   printf "gff_file\t%s\n" "${sample}.pharokka.gff" >> ${sample}.pharokka.summary.tsv
   """
 }
