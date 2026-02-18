@@ -8,18 +8,20 @@ include { MASH_DIST } from './modules/mash'
 include { PHAROKKA } from './modules/pharokka'
 
 process REPORT {
-  tag { sample }
+  tag sample
   publishDir { "${params.outdir}/${sample}/report" }, mode: 'copy'
 
   input:
   tuple val(sample), path(fastp_html), path(fastp_json), path(quast_tsv), path(quast_report), path(mash_dist), path(mash_closest), path(pharokka_summary)
+  path(make_report_script)
+  path(report_rmd)
 
   output:
   tuple val(sample), path("${sample}.report.html")
 
   script:
   """
-  Rscript ${projectDir}/bin/make_report.R \
+  Rscript ${make_report_script} \
     ${sample} \
     ${fastp_html} \
     ${fastp_json} \
@@ -29,12 +31,12 @@ process REPORT {
     ${mash_closest} \
     ${pharokka_summary} \
     ${sample}.report.html \
-    ${projectDir}/assets/report.Rmd
+    ${report_rmd}
   """
 }
 
 workflow {
-  Channel
+  channel
     .fromPath(params.input)
     .splitCsv(header: true)
     .map { row -> tuple(row.sample, row.fastq_1, row.fastq_2) }
@@ -44,17 +46,21 @@ workflow {
   qc = FASTP(fetched.reads)
   asm = SPADES(qc.reads)
   asm_qc = QUAST(asm.contigs)
-  mash = MASH_DIST(asm.contigs)
+  mash = MASH_DIST(
+    asm.contigs,
+    file(params.mash_refs_fasta.toString().startsWith('/') ? params.mash_refs_fasta : "${projectDir}/${params.mash_refs_fasta}"),
+    file(params.mash_ref_accessions.toString().startsWith('/') ? params.mash_ref_accessions : "${projectDir}/${params.mash_ref_accessions}")
+  )
 
-  anno_summary_ch = Channel.empty()
+  anno_summary_ch = channel.empty()
 
   if (params.run_pharokka) {
     phage_anno = PHAROKKA(asm.contigs)
-    anno_summary_ch = phage_anno.annotations.map { sample, gff, faa, summary ->
+    anno_summary_ch = phage_anno.annotations.map { sample, _gff, _faa, summary ->
       tuple(sample, summary)
     }
   } else {
-    anno_summary_ch = asm.contigs.map { sample, contigs ->
+    anno_summary_ch = asm.contigs.map { sample, _contigs ->
       tuple(sample, file("${projectDir}/assets/empty_pharokka_summary.tsv"))
     }
   }
@@ -64,5 +70,5 @@ workflow {
     .join(mash.hits, by: 0)
     .join(anno_summary_ch, by: 0)
 
-  REPORT(report_ch)
+  REPORT(report_ch, file("${projectDir}/bin/make_report.R"), file("${projectDir}/assets/report.Rmd"))
 }

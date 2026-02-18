@@ -1,32 +1,32 @@
 process MASH_DIST {
-  tag { sample }
+  tag sample
   publishDir { "${params.outdir}/${sample}/mash" }, mode: 'copy'
 
   input:
   tuple val(sample), path(contigs)
+  path(refs_fasta)
+  path(refs_accessions)
 
   output:
   tuple val(sample), path("${sample}.mash.dist.tsv"), path("${sample}.mash.closest.tsv"), emit: hits
 
   script:
-  def refsFasta = params.mash_refs_fasta.toString().startsWith('/') ? params.mash_refs_fasta : "${projectDir}/${params.mash_refs_fasta}"
-  def refsAccessions = params.mash_ref_accessions.toString().startsWith('/') ? params.mash_ref_accessions : "${projectDir}/${params.mash_ref_accessions}"
   """
   set -euo pipefail
 
-  if [[ -s "${refsFasta}" ]]; then
-    cp "${refsFasta}" refs.fasta
+  if [[ -s "${refs_fasta}" ]]; then
+    cp "${refs_fasta}" refs.fasta
   else
     : > refs.fasta
     while read -r accession; do
-      [[ -z "$accession" ]] && continue
-      url="https://www.ncbi.nlm.nih.gov/search/api/sequence/${accession}/?report=fasta&format=text"
+      [[ -z "\$accession" ]] && continue
+      url="https://www.ncbi.nlm.nih.gov/search/api/sequence/\${accession}/?report=fasta&format=text"
       if command -v curl >/dev/null 2>&1; then
-        curl -L --retry 3 --retry-delay 5 "$url" >> refs.fasta || true
+        curl -L --retry 3 --retry-delay 5 "\$url" >> refs.fasta || true
       else
-        wget -qO- "$url" >> refs.fasta || true
+        wget -qO- "\$url" >> refs.fasta || true
       fi
-    done < "${refsAccessions}"
+    done < "${refs_accessions}"
   fi
 
   if [[ ! -s refs.fasta ]]; then

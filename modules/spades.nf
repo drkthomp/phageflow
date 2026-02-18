@@ -1,5 +1,5 @@
 process SPADES {
-  tag { sample }
+  tag sample
   publishDir { "${params.outdir}/${sample}/spades" }, mode: 'copy'
 
   input:

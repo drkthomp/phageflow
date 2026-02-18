@@ -1,5 +1,5 @@
 process FETCH_FASTQ {
-  tag { sample }
+  tag sample
   publishDir { "${params.outdir}/${sample}/raw" }, mode: 'copy'
 
   input:

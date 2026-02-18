@@ -1,5 +1,5 @@
 process PHAROKKA {
-  tag { sample }
+  tag sample
   publishDir { "${params.outdir}/${sample}/pharokka" }, mode: 'copy'
 
   input:

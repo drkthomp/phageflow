@@ -1,5 +1,5 @@
 process FASTP {
-  tag { sample }
+  tag sample
   publishDir { "${params.outdir}/${sample}/fastp" }, mode: 'copy'
 
   input:

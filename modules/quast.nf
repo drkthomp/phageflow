@@ -1,5 +1,5 @@
 process QUAST {
-  tag { sample }
+  tag sample
   publishDir { "${params.outdir}/${sample}/quast" }, mode: 'copy'
 
   input:
