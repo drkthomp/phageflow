@@ -12,7 +12,42 @@ Pipeline stages:
 6. Phage annotation (`Pharokka`, optional)
 7. Wet-lab-friendly HTML report (`R Markdown`)
 
+## Versioning strategy (mamba + docker)
+
+`phageflow` uses both systems, each where it is strongest:
+
+- `mamba` pins the orchestration/runtime layer (Nextflow + Java + Docker CLI) in `envs/nextflow-runtime.yml`.
+- `docker` pins bioinformatics tool execution per process (fastp/SPAdes/QUAST/Mash/Pharokka/Report) via `conf/base.config` containers.
+- `mamba` process envs are also pinned in `envs/*.yml` and used with `-profile mamba` when Docker is unavailable.
+
+This gives reproducibility plus flexibility across laptop/HPC environments.
+
 ## Quickstart
+
+### Option A (recommended): run Nextflow from mamba, tools in Docker
+
+```bash
+mamba env create -f envs/nextflow-runtime.yml
+mamba activate phageflow-nextflow-runtime
+nextflow run main.nf -profile local,docker
+```
+
+### Option B: run Nextflow itself in a Docker runtime image
+
+```bash
+./bin/build_nextflow_runtime.sh
+./bin/run_nextflow_docker.sh
+```
+
+### Option C: full mamba execution (no Docker)
+
+```bash
+mamba env create -f envs/nextflow-runtime.yml
+mamba activate phageflow-nextflow-runtime
+nextflow run main.nf -profile local,mamba
+```
+
+Use this mode when Docker is disallowed (certain HPC nodes). For phage annotation robustness, Docker mode is preferred.
 
 ```bash
 nextflow run main.nf -profile local
@@ -49,6 +84,7 @@ SRR24913468,https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR249/008/SRR24913468/SRR24913
 
 - `local`: local executor
 - `slurm`: SLURM executor
+- `mamba`: process environments resolved by Conda/Mamba
 - `docker`: Docker containers enabled
 - `singularity`: Singularity/Apptainer enabled
 
@@ -56,6 +92,12 @@ SLURM example:
 
 ```bash
 nextflow run main.nf -profile slurm,singularity
+```
+
+SLURM + mamba example:
+
+```bash
+nextflow run main.nf -profile slurm,mamba
 ```
 
 ## Outputs
@@ -93,3 +135,4 @@ Per-sample outputs are published under `results/<sample>/`.
 - Default sample is SRR24913468 from PRJNA983107.
 - `params.run_pharokka=true` by default; set to false for a lighter run.
 - Mash references are sourced from `assets/mash_refs/accessions.txt` with fallback to `assets/mash_refs/refs.fasta`.
+- Runtime Docker image definition is in `docker/nextflow-runtime.Dockerfile`.

@@ -1,0 +1,8 @@
+name: phageflow-mash
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - mash=2.3
+  - curl=8.11.1
+  - wget=1.25.0

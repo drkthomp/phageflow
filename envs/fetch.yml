@@ -1,0 +1,6 @@
+name: phageflow-fetch
+channels:
+  - conda-forge
+dependencies:
+  - curl=8.11.1
+  - wget=1.25.0

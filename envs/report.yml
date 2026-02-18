@@ -1,0 +1,8 @@
+name: phageflow-report
+channels:
+  - conda-forge
+dependencies:
+  - r-base=4.4.2
+  - r-rmarkdown=2.29
+  - r-jsonlite=1.8.9
+  - pandoc=3.6.2

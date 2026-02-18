@@ -1,0 +1,6 @@
+name: phageflow-pharokka
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - pharokka=1.7.5

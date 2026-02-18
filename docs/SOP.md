@@ -10,6 +10,13 @@ Run a reproducible bacteriophage WGS workflow from FASTQ retrieval to an HTML re
 - Docker or Singularity/Apptainer available for containerized execution
 - Internet access for FASTQ retrieval (and optional Mash accession fetching)
 
+Recommended runtime setup:
+
+```bash
+mamba env create -f envs/nextflow-runtime.yml
+mamba activate phageflow-nextflow-runtime
+```
+
 ## Inputs
 
 `samplesheet.csv` with columns:
@@ -24,10 +31,22 @@ Run a reproducible bacteriophage WGS workflow from FASTQ retrieval to an HTML re
 nextflow run main.nf -profile local,docker
 ```
 
+## Standard run without Docker (mamba process envs)
+
+```bash
+nextflow run main.nf -profile local,mamba
+```
+
 ## Standard run with SLURM
 
 ```bash
 nextflow run main.nf -profile slurm,singularity
+```
+
+SLURM with mamba envs:
+
+```bash
+nextflow run main.nf -profile slurm,mamba
 ```
 
 ## Common parameters
@@ -51,5 +70,6 @@ nextflow run main.nf -profile slurm,singularity
 
 - Fetch failures: verify URLs and network access
 - Container pull failures: verify Docker/Singularity auth and internet
+- Mamba solve issues: run `mamba clean --all -y` and retry environment creation
 - Pharokka resource failures: increase `process.memory` and `process.time`
 - SLURM pending jobs: verify queue in `conf/slurm.config`

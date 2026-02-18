@@ -1,0 +1,10 @@
+name: phageflow-nextflow-runtime
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - nextflow=24.10.4
+  - openjdk=21
+  - docker-cli=27.5.1
+  - git=2.47.2
+  - curl=8.11.1
