@@ -12,17 +12,12 @@ process FETCH_FASTQ {
   """
   set -euo pipefail
 
-  fetch_url() {
-    url="$1"
-    out="$2"
-    if command -v curl >/dev/null 2>&1; then
-      curl -L --retry 3 --retry-delay 5 -o "$out" "$url"
-    else
-      wget -O "$out" "$url"
-    fi
-  }
-
-  fetch_url "${fastq_1}" "${sample}_1.fastq.gz"
-  fetch_url "${fastq_2}" "${sample}_2.fastq.gz"
+  if command -v curl >/dev/null 2>&1; then
+    curl -L --retry 3 --retry-delay 5 -o ${sample}_1.fastq.gz ${fastq_1}
+    curl -L --retry 3 --retry-delay 5 -o ${sample}_2.fastq.gz ${fastq_2}
+  else
+    wget -O ${sample}_1.fastq.gz ${fastq_1}
+    wget -O ${sample}_2.fastq.gz ${fastq_2}
+  fi
   """
 }
