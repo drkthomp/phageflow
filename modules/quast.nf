@@ -25,7 +25,13 @@ process QUAST {
     cp quast_out/report.tsv ${sample}.quast.tsv
   else
     printf "metric\tvalue\n" > ${sample}.quast.tsv
-    awk -F': ' '/^# contigs|^Total length|^N50|^GC \(%\)/ {gsub(/^ +/, "", $1); print $1"\t"$2}' quast_out/report.txt >> ${sample}.quast.tsv || true
+    total_length=$(grep -E '^Total length' quast_out/report.txt | head -n 1 | cut -d':' -f2- | sed 's/^ //') || true
+    n50_value=$(grep -E '^N50' quast_out/report.txt | head -n 1 | cut -d':' -f2- | sed 's/^ //') || true
+    contigs_count=$(grep -E '^# contigs' quast_out/report.txt | head -n 1 | cut -d':' -f2- | sed 's/^ //') || true
+
+    printf "contigs\t%s\n" "${contigs_count:-NA}" >> ${sample}.quast.tsv
+    printf "total_length\t%s\n" "${total_length:-NA}" >> ${sample}.quast.tsv
+    printf "N50\t%s\n" "${n50_value:-NA}" >> ${sample}.quast.tsv
   fi
   """
 }
