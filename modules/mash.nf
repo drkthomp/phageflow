@@ -9,11 +9,13 @@ process MASH_DIST {
   tuple val(sample), path("${sample}.mash.dist.tsv"), path("${sample}.mash.closest.tsv"), emit: hits
 
   script:
+  def refsFasta = params.mash_refs_fasta.toString().startsWith('/') ? params.mash_refs_fasta : "${projectDir}/${params.mash_refs_fasta}"
+  def refsAccessions = params.mash_ref_accessions.toString().startsWith('/') ? params.mash_ref_accessions : "${projectDir}/${params.mash_ref_accessions}"
   """
   set -euo pipefail
 
-  if [[ -s "${params.mash_refs_fasta}" ]]; then
-    cp "${params.mash_refs_fasta}" refs.fasta
+  if [[ -s "${refsFasta}" ]]; then
+    cp "${refsFasta}" refs.fasta
   else
     : > refs.fasta
     while read -r accession; do
@@ -24,7 +26,7 @@ process MASH_DIST {
       else
         wget -qO- "$url" >> refs.fasta || true
       fi
-    done < "${params.mash_ref_accessions}"
+    done < "${refsAccessions}"
   fi
 
   if [[ ! -s refs.fasta ]]; then
