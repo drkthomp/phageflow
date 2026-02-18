@@ -1,5 +1,5 @@
 process PHAROKKA {
-  tag sample
+  tag "${sample}"
   publishDir { "${params.outdir}/${sample}/pharokka" }, mode: 'copy'
 
   input:
@@ -12,16 +12,27 @@ process PHAROKKA {
   """
   set -euo pipefail
 
+  status="success"
+  set +e
   pharokka.py \
     -i ${contigs} \
     -o pharokka_out \
     -p ${sample} \
     -t ${task.cpus}
+  pharokka_exit=$?
+  set -e
 
-  cp pharokka_out/*.gff ${sample}.pharokka.gff
-  cp pharokka_out/*.faa ${sample}.pharokka.cds.faa
+  if [[ ${pharokka_exit} -eq 0 ]]; then
+    cp pharokka_out/*.gff ${sample}.pharokka.gff
+    cp pharokka_out/*.faa ${sample}.pharokka.cds.faa
+  else
+    status="failed_missing_db"
+    printf "##gff-version 3\n" > ${sample}.pharokka.gff
+    : > ${sample}.pharokka.cds.faa
+  fi
 
   printf "metric\tvalue\n" > ${sample}.pharokka.summary.tsv
+  printf "status\t%s\n" "${status}" >> ${sample}.pharokka.summary.tsv
   printf "predicted_proteins\tNA\n" >> ${sample}.pharokka.summary.tsv
   printf "gff_file\t%s\n" "${sample}.pharokka.gff" >> ${sample}.pharokka.summary.tsv
   """
