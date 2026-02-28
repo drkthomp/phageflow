@@ -9,7 +9,7 @@ include { PHAROKKA } from './modules/pharokka'
 
 process REPORT {
   tag "${sample}"
-  publishDir { "${params.outdir}/${sample}/report" }, mode: 'copy'
+  publishDir { "${params.outdir}/${sample}/report" }, mode: 'copy', overwrite: true
 
   input:
   tuple val(sample), path(fastp_html), path(fastp_json), path(quast_tsv), path(quast_report), path(mash_dist), path(mash_closest), path(pharokka_summary)

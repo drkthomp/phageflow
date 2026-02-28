@@ -1,6 +1,6 @@
 process FASTP {
   tag "${sample}"
-  publishDir { "${params.outdir}/${sample}/fastp" }, mode: 'copy'
+  publishDir { "${params.outdir}/${sample}/fastp" }, mode: 'copy', overwrite: true
 
   input:
   tuple val(sample), path(read1), path(read2)

@@ -1,6 +1,6 @@
 process SPADES {
   tag "${sample}"
-  publishDir { "${params.outdir}/${sample}/spades" }, mode: 'copy'
+  publishDir { "${params.outdir}/${sample}/spades" }, mode: 'copy', overwrite: true
 
   input:
   tuple val(sample), path(read1), path(read2)

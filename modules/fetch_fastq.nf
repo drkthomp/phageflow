@@ -1,6 +1,6 @@
 process FETCH_FASTQ {
   tag "${sample}"
-  publishDir { "${params.outdir}/${sample}/raw" }, mode: 'copy'
+  publishDir { "${params.outdir}/${sample}/raw" }, mode: 'copy', overwrite: true
 
   input:
   tuple val(sample), val(fastq_1), val(fastq_2)

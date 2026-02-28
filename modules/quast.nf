@@ -1,6 +1,6 @@
 process QUAST {
   tag "${sample}"
-  publishDir { "${params.outdir}/${sample}/quast" }, mode: 'copy'
+  publishDir { "${params.outdir}/${sample}/quast" }, mode: 'copy', overwrite: true
 
   input:
   tuple val(sample), path(contigs)

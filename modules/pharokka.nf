@@ -1,6 +1,6 @@
 process PHAROKKA {
   tag "${sample}"
-  publishDir { "${params.outdir}/${sample}/pharokka" }, mode: 'copy'
+  publishDir { "${params.outdir}/${sample}/pharokka" }, mode: 'copy', overwrite: true
 
   input:
   tuple val(sample), path(contigs)
@@ -20,20 +20,20 @@ process PHAROKKA {
   pharokka_bin="\$(command -v pharokka.py || true)"
 
   if [[ -z "\${db_dir}" && -n "\${pharokka_bin}" ]]; then
-    db_dir="\$(dirname "\${pharokka_bin}")/../databases"
+    db_dir="\$(dirname "\$(dirname "\${pharokka_bin}")")/databases"
+  fi
+
+  if [[ -z "\${db_dir}" ]]; then
+    db_dir="\${PWD}/pharokka_databases"
   fi
 
   run_install_databases() {
     db_install_ran="true"
     set +e
-    if [[ -n "\${db_dir}" ]]; then
-      install_databases.py --db_dir "\${db_dir}" > install_databases.log 2>&1
-      install_exit=\$?
-      if [[ \${install_exit} -ne 0 ]]; then
-        install_databases.py >> install_databases.log 2>&1
-      fi
-    else
-      install_databases.py > install_databases.log 2>&1
+    install_databases.py -o "\${db_dir}" > install_databases.log 2>&1
+    install_exit=\$?
+    if [[ \${install_exit} -ne 0 ]]; then
+      install_databases.py -o "\${db_dir}" >> install_databases.log 2>&1
     fi
     set -e
   }
@@ -47,7 +47,9 @@ process PHAROKKA {
     -i ${contigs} \
     -o pharokka_out \
     -p ${sample} \
-    -t ${task.cpus} > pharokka.log 2>&1
+    -t ${task.cpus} \
+    -d "\${db_dir}" \
+    -f > pharokka.log 2>&1
   pharokka_exit=\$?
   set -e
 
@@ -59,7 +61,9 @@ process PHAROKKA {
       -i ${contigs} \
       -o pharokka_out \
       -p ${sample} \
-      -t ${task.cpus} >> pharokka.log 2>&1
+      -t ${task.cpus} \
+      -d "\${db_dir}" \
+      -f >> pharokka.log 2>&1
     pharokka_exit=\$?
     set -e
   fi
