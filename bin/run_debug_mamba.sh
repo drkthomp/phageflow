@@ -10,6 +10,7 @@ mkdir -p "${repo_root}/logs"
 export NXF_DEBUG=3
 export NXF_ANSI_LOG=false
 export MAMBA_NO_BANNER=1
+export MAMBA_ALWAYS_YES=true
 
 echo "[phageflow] Writing Nextflow log to logs/nextflow-debug-${timestamp}.log"
 echo "[phageflow] Writing trace file to trace-${timestamp}.txt"

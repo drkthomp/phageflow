@@ -5,6 +5,7 @@ channels:
 dependencies:
   - nextflow=24.10.4
   - openjdk=21
+  - conda>=24.7
   - docker-cli=27.5.1
   - git>=2.47,<2.48
   - curl=8.11.1
