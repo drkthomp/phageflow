@@ -10,27 +10,149 @@ params:
   mash_dist: ""
   mash_closest: ""
   pharokka_summary: ""
+  mash_close_threshold: 0.25
+  mash_moderate_threshold: 0.35
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library(jsonlite)
+library(tidyverse)
+library(scales)
+
+theme_set(
+  theme_minimal(base_size = 12) +
+    theme(
+      plot.title = element_text(face = "bold", size = 13),
+      axis.title = element_text(face = "bold"),
+      panel.grid.minor = element_blank()
+    )
+)
+
+safe_num <- function(x) {
+  suppressWarnings(as.numeric(x))
+}
+
+first_existing_col <- function(df, candidates) {
+  hit <- candidates[candidates %in% names(df)]
+  if (length(hit) == 0) return(NULL)
+  hit[[1]]
+}
+
+`%||%` <- function(x, y) {
+  if (is.null(x) || length(x) == 0) y else x
+}
 ```
 
-## Sample
+# `r params$sample`
 
-`r params$sample`
+## What we learned
 
-## fastp summary
-
-```{r fastp}
+```{r learned}
+# fastp
 fastp_data <- fromJSON(params$fastp_json)
 before <- fastp_data$summary$before_filtering
 after <- fastp_data$summary$after_filtering
-data.frame(
-  metric = c("reads_before", "reads_after", "q30_rate_before", "q30_rate_after"),
-  value = c(before$total_reads, after$total_reads, before$q30_rate, after$q30_rate)
+
+reads_before <- before$total_reads %||% NA
+reads_after <- after$total_reads %||% NA
+q30_before <- before$q30_rate %||% NA
+q30_after <- after$q30_rate %||% NA
+
+# quast
+quast_df <- if (file.exists(params$quast_tsv)) readr::read_tsv(params$quast_tsv, show_col_types = FALSE) else tibble()
+
+assembly_row <- if (nrow(quast_df) > 0) quast_df[1, ] else tibble()
+contigs_col <- first_existing_col(quast_df, c("# contigs", "contigs"))
+n50_col <- first_existing_col(quast_df, c("N50", "N50 (>= 0 bp)"))
+total_len_col <- first_existing_col(quast_df, c("Total length", "total_length", "Total length (>= 0 bp)"))
+gc_col <- first_existing_col(quast_df, c("GC (%)", "GC"))
+
+contigs_val <- if (!is.null(contigs_col)) safe_num(assembly_row[[contigs_col]]) else NA
+n50_val <- if (!is.null(n50_col)) safe_num(assembly_row[[n50_col]]) else NA
+total_len_val <- if (!is.null(total_len_col)) safe_num(assembly_row[[total_len_col]]) else NA
+gc_val <- if (!is.null(gc_col)) safe_num(assembly_row[[gc_col]]) else NA
+
+# mash
+closest_df <- readr::read_tsv(params$mash_closest, show_col_types = FALSE)
+closest_row <- if (nrow(closest_df) > 0) closest_df[1, ] else tibble(reference = NA, distance = NA)
+mash_ref <- closest_row$reference %||% NA
+mash_dist <- safe_num(closest_row$distance %||% NA)
+mash_shared <- closest_row$shared_hashes %||% NA
+mash_shared_n <- suppressWarnings(as.numeric(str_extract(as.character(mash_shared), "^[0-9]+")))
+mash_label <- case_when(
+  is.na(mash_dist) ~ "unknown",
+  mash_dist <= params$mash_close_threshold ~ "close_reference_detected",
+  !is.na(mash_shared_n) && mash_shared_n > 0 && mash_dist <= params$mash_moderate_threshold ~ "moderately_related_reference_cluster",
+  TRUE ~ "no_close_reference"
 )
+
+# pharokka
+pharokka_df <- readr::read_tsv(params$pharokka_summary, show_col_types = FALSE)
+pharokka_status <- pharokka_df %>% filter(metric == "status") %>% pull(value)
+pharokka_status <- if (length(pharokka_status) > 0) pharokka_status[[1]] else "unknown"
+
+pharokka_proteins <- pharokka_df %>% filter(metric == "predicted_proteins") %>% pull(value)
+pharokka_proteins <- if (length(pharokka_proteins) > 0) safe_num(pharokka_proteins[[1]]) else NA
+
+cat(sprintf("- **Read QC**: reads before/after filtering = %s / %s; Q30 before/after = %s / %s.\n",
+            ifelse(is.na(reads_before), "NA", comma(reads_before)),
+            ifelse(is.na(reads_after), "NA", comma(reads_after)),
+            ifelse(is.na(q30_before), "NA", percent(q30_before, accuracy = 0.1)),
+            ifelse(is.na(q30_after), "NA", percent(q30_after, accuracy = 0.1))))
+
+cat(sprintf("- **Assembly quality**: contigs = %s; total length = %s bp; N50 = %s bp; GC = %s.\n",
+            ifelse(is.na(contigs_val), "NA", comma(contigs_val)),
+            ifelse(is.na(total_len_val), "NA", comma(total_len_val)),
+            ifelse(is.na(n50_val), "NA", comma(n50_val)),
+            ifelse(is.na(gc_val), "NA", paste0(round(gc_val, 2), "%"))))
+
+cat(sprintf("- **Closest reference (Mash)**: %s with distance %s.\n",
+            ifelse(is.na(mash_ref), "NA", mash_ref),
+            ifelse(is.na(mash_dist), "NA", number(mash_dist, accuracy = 0.0001))))
+
+cat(sprintf("- **Mash interpretation**: %s (threshold = %.2f; lower is closer).\n",
+            mash_label,
+            params$mash_close_threshold))
+
+cat(sprintf("- **Mash evidence**: shared hashes for best hit = %s.\n",
+            ifelse(is.na(mash_shared), "NA", mash_shared)))
+
+cat(sprintf("- **Gene annotation (Pharokka)**: status = %s; predicted proteins = %s.\n",
+            pharokka_status,
+            ifelse(is.na(pharokka_proteins), "NA", comma(pharokka_proteins))))
+```
+
+## Read quality (fastp)
+
+```{r fastp}
+fastp_plot_df <- tibble(
+  stage = factor(c("Before filtering", "After filtering"), levels = c("Before filtering", "After filtering")),
+  reads = c(reads_before, reads_after),
+  q30 = c(q30_before, q30_after)
+)
+
+fastp_table <- fastp_plot_df %>%
+  mutate(
+    reads = ifelse(is.na(reads), NA, comma(reads)),
+    q30 = ifelse(is.na(q30), NA, percent(q30, accuracy = 0.1))
+  )
+
+knitr::kable(fastp_table, col.names = c("Stage", "Reads", "Q30 rate"))
+
+if (sum(!is.na(fastp_plot_df$reads)) > 0) {
+  ggplot(fastp_plot_df, aes(x = stage, y = reads, fill = stage)) +
+    geom_col(width = 0.65, show.legend = FALSE) +
+    scale_y_continuous(labels = comma) +
+    labs(title = "Reads retained after QC", x = NULL, y = "Read count")
+}
+
+if (sum(!is.na(fastp_plot_df$q30)) > 0) {
+  ggplot(fastp_plot_df, aes(x = stage, y = q30, fill = stage)) +
+    geom_col(width = 0.65, show.legend = FALSE) +
+    scale_y_continuous(labels = percent_format(accuracy = 1)) +
+    labs(title = "Q30 rate before and after QC", x = NULL, y = "Q30 rate")
+}
 ```
 
 Fastp interactive report: `r params$fastp_html`
@@ -38,22 +160,76 @@ Fastp interactive report: `r params$fastp_html`
 ## QUAST metrics
 
 ```{r quast}
-if (file.exists(params$quast_tsv)) {
-  quast_df <- read.delim(params$quast_tsv, sep = "\t", header = TRUE)
-  quast_df
+if (nrow(quast_df) > 0) {
+  core_metrics <- tibble(
+    metric = c("Contigs", "Total length (bp)", "N50 (bp)", "GC (%)"),
+    value = c(contigs_val, total_len_val, n50_val, gc_val)
+  )
+
+  core_metrics_fmt <- core_metrics %>%
+    mutate(value = case_when(
+      metric == "GC (%)" & !is.na(value) ~ sprintf("%.2f%%", value),
+      !is.na(value) ~ comma(value),
+      TRUE ~ "NA"
+    ))
+
+  knitr::kable(core_metrics_fmt, col.names = c("Metric", "Value"))
+
+  core_metrics_plot <- core_metrics %>%
+    filter(!is.na(value), metric != "GC (%)")
+
+  if (nrow(core_metrics_plot) > 0) {
+    ggplot(core_metrics_plot, aes(x = fct_reorder(metric, value), y = value, fill = metric)) +
+      geom_col(show.legend = FALSE, width = 0.65) +
+      coord_flip() +
+      scale_y_continuous(labels = comma) +
+      labs(title = "Assembly metrics", x = NULL, y = "Value")
+  }
 }
 ```
 
-## Mash closest references
+## Mash reference similarity
 
 ```{r mash}
-closest_df <- read.delim(params$mash_closest, sep = "\t", header = TRUE)
-closest_df
+mash_dist_df <- readr::read_tsv(params$mash_dist, show_col_types = FALSE) %>%
+  mutate(distance = safe_num(distance)) %>%
+  filter(!is.na(distance)) %>%
+  arrange(distance) %>%
+  slice_head(n = 10)
+
+closest_fmt <- closest_df %>%
+  mutate(distance = safe_num(distance)) %>%
+  mutate(distance = ifelse(is.na(distance), NA, number(distance, accuracy = 0.0001)))
+
+knitr::kable(closest_fmt, col.names = c("Reference", "Query", "Distance", "P-value", "Shared hashes"))
+
+knitr::kable(
+  tibble(
+    metric = c("best_distance", "close_threshold", "interpretation"),
+    value = c(
+      ifelse(is.na(mash_dist), "NA", number(mash_dist, accuracy = 0.0001)),
+      paste0(number(params$mash_close_threshold, accuracy = 0.01), " / ", number(params$mash_moderate_threshold, accuracy = 0.01), " (close/moderate)"),
+      mash_label
+    )
+  ),
+  col.names = c("Mash metric", "Value")
+)
+
+if (nrow(mash_dist_df) > 0) {
+  ggplot(mash_dist_df, aes(x = distance, y = fct_reorder(reference, -distance))) +
+    geom_point(size = 2.8) +
+    geom_segment(aes(x = 0, xend = distance, y = reference, yend = reference)) +
+    geom_vline(xintercept = params$mash_close_threshold, linetype = "dashed") +
+    labs(title = "Mash distances to reference set", x = "Mash distance (lower is closer)", y = "Reference")
+}
 ```
 
 ## Pharokka summary
 
 ```{r pharokka}
-pharokka_df <- read.delim(params$pharokka_summary, sep = "\t", header = TRUE)
-pharokka_df
+pharokka_fmt <- pharokka_df %>%
+  mutate(metric = str_replace_all(metric, "_", " ")) %>%
+  mutate(metric = str_to_title(metric))
+
+knitr::kable(pharokka_fmt, col.names = c("Metric", "Value"))
 ```

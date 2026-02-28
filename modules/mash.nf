@@ -80,7 +80,7 @@ PY
 
     if [[ -s refs.top.fasta ]]; then
       mash sketch -k "\${refine_k}" -s "\${refine_s}" -i -o refs_top_refined.msh refs.top.fasta
-      mash dist -k "\${refine_k}" -s "\${refine_s}" refs_top_refined.msh ${contigs} | sort -k3,3g > ${sample}.mash.dist.refined.tsv
+      mash dist refs_top_refined.msh ${contigs} | sort -k3,3g > ${sample}.mash.dist.refined.tsv
 
       if [[ -s ${sample}.mash.dist.refined.tsv ]]; then
         awk 'NR==FNR{top[\$1]=1; next} !(\$1 in top)' ${sample}.mash.top.refs ${sample}.mash.dist.coarse.tsv > ${sample}.mash.dist.non_top.tsv
