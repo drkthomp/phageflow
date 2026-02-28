@@ -5,3 +5,7 @@ results/
 *.log
 *.html
 *.msh
+.mamba/
+.github/
+.vscode/
+trace*.txt
